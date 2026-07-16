@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService, Business } from '../auth/auth.service';
+import { PwaInstallService } from '../pwa-install.service';
 
 type LoginStep = 'business' | 'otp' | 'password';
 
@@ -14,6 +15,26 @@ type LoginStep = 'business' | 'otp' | 'password';
   template: `
     <div class="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4">
       <div class="w-full max-w-sm">
+        <div class="mb-4 flex justify-end">
+          <button
+            (click)="installApp()"
+            [disabled]="pwaInstall.isInstalling()"
+            class="px-3 py-2 rounded-xl text-xs font-semibold text-white bg-white/15 hover:bg-white/25 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            Installa App
+          </button>
+        </div>
+        @if (pwaInstall.feedback(); as feedback) {
+          <p class="text-xs mb-3"
+             [class.text-green-200]="feedback.type === 'success'"
+             [class.text-yellow-100]="feedback.type === 'info'"
+             [class.text-red-200]="feedback.type === 'error'">
+            {{ feedback.message }}
+          </p>
+        } @else {
+          <p class="text-xs text-blue-200 mb-3">{{ pwaInstall.availabilityMessage() }}</p>
+        }
+
         <!-- Logo / Brand -->
         <div class="text-center mb-8">
           <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur mb-4 shadow-xl">
@@ -223,6 +244,7 @@ type LoginStep = 'business' | 'otp' | 'password';
 })
 export class LoginComponent implements OnDestroy {
   auth = inject(AuthService);
+  pwaInstall = inject(PwaInstallService);
   private router = inject(Router);
 
   step = signal<LoginStep>('business');
@@ -340,6 +362,10 @@ export class LoginComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.clearTimers();
+  }
+
+  installApp(): void {
+    void this.pwaInstall.installApp();
   }
 
   private startOtpTimer(): void {
