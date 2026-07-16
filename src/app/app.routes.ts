@@ -14,5 +14,10 @@ export const routes: Routes = [
     loadComponent: () => import('./accounting/accounting.component').then(m => m.AccountingComponent),
     canActivate: [authGuard],
   },
+  {
+    path: 'profile',
+    loadComponent: () => import('./profile/profile.component').then(m => m.ProfileComponent),
+    canActivate: [authGuard],
+  },
   { path: '**', redirectTo: 'products' },
 ];

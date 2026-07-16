@@ -23,6 +23,17 @@ CREATE TABLE IF NOT EXISTS otp_codes (
   used        INTEGER NOT NULL DEFAULT 0
 );
 
+-- Password login for Mercatone (SHA-256 hash)
+CREATE TABLE IF NOT EXISTS auth_passwords (
+  business_id   TEXT    PRIMARY KEY,
+  password_hash TEXT    NOT NULL,
+  updated_at    INTEGER NOT NULL
+);
+
+-- Password hash of default value: Mercatone2025!
+INSERT OR IGNORE INTO auth_passwords (business_id, password_hash, updated_at)
+VALUES ('mercatone', 'e81c8ec60ccf885a3b8a1f43c752a3dfeeb22228de5354af3efa96a0c9b7f3b2', strftime('%s', 'now') * 1000);
+
 -- Foglio: Pennino (PENNINO AZIENDA CALCOLO ENTRATE +USCITE REVISIONATO.xlsx - acq+ vendite revisio)
 -- Colonne: FATT ACQ | data | denom | vendite | data vend | deno vend
 -- Totali calcolati: tot acq+giac (somma fattAcq), tot vend (somma vendite), acq-vend
