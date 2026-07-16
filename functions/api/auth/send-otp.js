@@ -11,7 +11,7 @@
  *   TEXTBELT_KEY     – (optional) API key (defaults to the free "textbelt" key)
  */
 
-const VALID_BUSINESS_IDS = ['pennino', 'mercatone'];
+const VALID_BUSINESS_IDS = ['mercatone'];
 
 export async function onRequestPost({ request, env }) {
   try {

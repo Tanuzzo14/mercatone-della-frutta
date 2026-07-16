@@ -5,12 +5,18 @@
  * Verifies the OTP stored in D1. Returns 401 if the code is wrong or expired.
  */
 
+const VALID_BUSINESS_IDS = ['mercatone'];
+
 export async function onRequestPost({ request, env }) {
   try {
     const { businessId, otp } = await request.json();
 
     if (!businessId || !otp) {
       return Response.json({ error: 'businessId e otp sono obbligatori' }, { status: 400 });
+    }
+
+    if (!VALID_BUSINESS_IDS.includes(businessId)) {
+      return Response.json({ error: 'Business non valido' }, { status: 400 });
     }
 
     const now = Date.now();

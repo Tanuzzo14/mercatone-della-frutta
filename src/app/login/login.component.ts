@@ -2,9 +2,10 @@ import { Component, signal, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService, Business } from '../auth/auth.service';
 
-type LoginStep = 'business' | 'otp';
+type LoginStep = 'business' | 'otp' | 'password';
 
 @Component({
   selector: 'app-login',
@@ -28,17 +29,11 @@ type LoginStep = 'business' | 'otp';
         <div class="bg-white rounded-3xl shadow-2xl p-6">
           @if (step() === 'business') {
             <h2 class="text-xl font-bold text-gray-800 mb-1">Accedi</h2>
-            <p class="text-gray-500 text-sm mb-5">Seleziona la tua attività e ricevi il codice via SMS</p>
+            <p class="text-gray-500 text-sm mb-5">Accesso disponibile solo per Mercatone della Frutta</p>
 
             <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Attività</label>
-                <select [(ngModel)]="selectedBusinessId" class="input-field">
-                  <option value="" disabled>-- Seleziona attività --</option>
-                  @for (b of auth.businesses; track b.id) {
-                    <option [value]="b.id">{{ b.name }}</option>
-                  }
-                </select>
+              <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-3 text-sm font-medium">
+                Attività: Mercatone della Frutta
               </div>
 
               @if (errorMsg()) {
@@ -48,7 +43,7 @@ type LoginStep = 'business' | 'otp';
                 </div>
               }
 
-              <button (click)="sendOtp()" [disabled]="loading() || !selectedBusinessId" class="btn-primary">
+              <button (click)="sendOtp()" [disabled]="loading()" class="btn-primary">
                 @if (loading()) {
                   <span class="flex items-center justify-center gap-2">
                     <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
@@ -58,6 +53,15 @@ type LoginStep = 'business' | 'otp';
                   Invia codice OTP
                 }
               </button>
+
+              @if (allowPasswordFallback()) {
+                <button
+                  (click)="openPasswordLogin()"
+                  class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-semibold transition-all"
+                >
+                  Accedi con password
+                </button>
+              }
             </div>
           }
 
@@ -147,6 +151,69 @@ type LoginStep = 'business' | 'otp';
                   Non hai ricevuto il codice? Rinvia
                 }
               </button>
+
+              @if (allowPasswordFallback()) {
+                <button
+                  (click)="openPasswordLogin()"
+                  class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-semibold transition-all"
+                >
+                  OTP non disponibile? Accedi con password
+                </button>
+              }
+            </div>
+          }
+
+          @if (step() === 'password') {
+            <button (click)="goBackToBusiness()" class="flex items-center gap-1 text-blue-600 text-sm font-medium mb-4 hover:text-blue-800">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              Indietro
+            </button>
+
+            <h2 class="text-xl font-bold text-gray-800 mb-1">Accesso con password</h2>
+            <p class="text-gray-500 text-sm mb-5">Usa la password Mercatone se gli OTP sono terminati</p>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  type="password"
+                  [(ngModel)]="passwordInput"
+                  class="input-field"
+                  placeholder="Inserisci password"
+                  (keyup.enter)="submitPasswordLogin()"
+                />
+              </div>
+
+              <label class="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="trustDevice"
+                  class="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+                />
+                <span class="text-sm text-gray-600">Ricorda questo dispositivo per 1 giorno</span>
+              </label>
+
+              @if (errorMsg()) {
+                <div class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-xl">
+                  <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                  {{ errorMsg() }}
+                </div>
+              }
+
+              <button
+                (click)="submitPasswordLogin()"
+                [disabled]="loading() || !passwordInput"
+                class="btn-primary"
+              >
+                @if (loading()) {
+                  <span class="flex items-center justify-center gap-2">
+                    <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    Accesso...
+                  </span>
+                } @else {
+                  Accedi con password
+                }
+              </button>
             </div>
           }
         </div>
@@ -163,36 +230,39 @@ export class LoginComponent implements OnDestroy {
   private router = inject(Router);
 
   step = signal<LoginStep>('business');
-  selectedBusinessId = '';
+  readonly mercatoneBusinessId = 'mercatone';
   otpInput = '';
+  passwordInput = '';
   trustDevice = false;
   loading = signal(false);
   errorMsg = signal('');
   pendingBusiness = signal<Business | null>(null);
   secondsLeft = signal(60);
   resendCooldown = signal(0);
+  allowPasswordFallback = signal(false);
   currentYear = new Date().getFullYear();
 
   private otpTimer?: ReturnType<typeof setInterval>;
   private cooldownTimer?: ReturnType<typeof setInterval>;
 
   async sendOtp(): Promise<void> {
-    if (!this.selectedBusinessId) {
-      this.errorMsg.set('Seleziona la tua attività.');
-      return;
-    }
     this.loading.set(true);
     this.errorMsg.set('');
     try {
-      await this.auth.sendOtp(this.selectedBusinessId);
-      const business = this.auth.businesses.find(b => b.id === this.selectedBusinessId) ?? null;
+      await this.auth.sendOtp(this.mercatoneBusinessId);
+      const business = this.auth.businesses.find(b => b.id === this.mercatoneBusinessId) ?? null;
       this.pendingBusiness.set(business);
       this.otpInput = '';
       this.step.set('otp');
       this.startOtpTimer();
       this.startResendCooldown();
-    } catch {
-      this.errorMsg.set("Errore nell'invio del codice OTP. Riprova.");
+    } catch (error) {
+      this.allowPasswordFallback.set(this.isOtpQuotaIssue(error));
+      if (this.allowPasswordFallback()) {
+        this.errorMsg.set('OTP non disponibile/esaurito. Puoi accedere con password.');
+      } else {
+        this.errorMsg.set("Errore nell'invio del codice OTP. Riprova.");
+      }
     } finally {
       this.loading.set(false);
     }
@@ -202,7 +272,7 @@ export class LoginComponent implements OnDestroy {
     this.errorMsg.set('');
     this.loading.set(true);
     try {
-      const ok = await this.auth.verifyOtp(this.selectedBusinessId, this.otpInput, this.trustDevice);
+      const ok = await this.auth.verifyOtp(this.mercatoneBusinessId, this.otpInput, this.trustDevice);
       if (ok) {
         this.clearTimers();
         this.router.navigate(['/products']);
@@ -225,11 +295,38 @@ export class LoginComponent implements OnDestroy {
       this.otpInput = '';
       this.startOtpTimer();
       this.startResendCooldown();
-    } catch {
-      this.errorMsg.set("Errore nell'invio del codice OTP. Riprova.");
+    } catch (error) {
+      this.allowPasswordFallback.set(this.isOtpQuotaIssue(error));
+      if (this.allowPasswordFallback()) {
+        this.errorMsg.set('OTP non disponibile/esaurito. Usa la password.');
+      } else {
+        this.errorMsg.set("Errore nell'invio del codice OTP. Riprova.");
+      }
     } finally {
       this.loading.set(false);
     }
+  }
+
+  async submitPasswordLogin(): Promise<void> {
+    this.errorMsg.set('');
+    this.loading.set(true);
+    try {
+      const ok = await this.auth.loginWithPassword(this.mercatoneBusinessId, this.passwordInput, this.trustDevice);
+      if (ok) {
+        this.passwordInput = '';
+        this.router.navigate(['/products']);
+      } else {
+        this.errorMsg.set('Password non valida.');
+      }
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  openPasswordLogin(): void {
+    this.errorMsg.set('');
+    this.passwordInput = '';
+    this.step.set('password');
   }
 
   goBack(): void {
@@ -237,6 +334,12 @@ export class LoginComponent implements OnDestroy {
     this.step.set('business');
     this.errorMsg.set('');
     this.otpInput = '';
+  }
+
+  goBackToBusiness(): void {
+    this.errorMsg.set('');
+    this.passwordInput = '';
+    this.step.set('business');
   }
 
   ngOnDestroy(): void {
@@ -280,5 +383,15 @@ export class LoginComponent implements OnDestroy {
   private clearTimers(): void {
     this.clearOtpTimer();
     this.clearCooldownTimer();
+  }
+
+  private isOtpQuotaIssue(error: unknown): boolean {
+    const fallbackTerms = ['quota', 'limit', 'esaur', 'too many', 'textbelt'];
+    if (error instanceof HttpErrorResponse) {
+      const backendMessage = typeof error.error?.error === 'string' ? error.error.error : '';
+      const text = `${backendMessage} ${error.message}`.toLowerCase();
+      return fallbackTerms.some(term => text.includes(term));
+    }
+    return false;
   }
 }

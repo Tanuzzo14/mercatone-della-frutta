@@ -39,6 +39,11 @@ import { AuthService } from './auth/auth.service';
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                 Pennino
               </a>
+              <a routerLink="/profile" routerLinkActive="bg-white/20 text-white"
+                class="px-4 py-2 rounded-lg text-sm font-medium text-blue-100 hover:bg-white/10 hover:text-white transition-all flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A9 9 0 1118.88 17.8M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                La mia pagina
+              </a>
               <button (click)="logout()"
                 class="ml-3 px-3 py-2 rounded-lg text-sm font-medium text-blue-200 hover:bg-red-500/20 hover:text-red-200 transition-all flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -91,6 +96,20 @@ import { AuthService } from './auth/auth.service';
                 }
               </div>
               <span class="text-xs font-semibold mt-1" [class.font-bold]="rlaAccounting.isActive">Pennino</span>
+            </a>
+            <a routerLink="/profile" routerLinkActive #rlaProfile="routerLinkActive"
+              class="flex-1 flex flex-col items-center py-3 transition-colors"
+              [class.text-blue-700]="rlaProfile.isActive"
+              [class.text-gray-500]="!rlaProfile.isActive">
+              <div class="relative">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" [attr.stroke-width]="rlaProfile.isActive ? 2.5 : 1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A9 9 0 1118.88 17.8M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                @if (rlaProfile.isActive) {
+                  <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-700"></span>
+                }
+              </div>
+              <span class="text-xs font-semibold mt-1" [class.font-bold]="rlaProfile.isActive">Profilo</span>
             </a>
           </div>
         </nav>

@@ -9,7 +9,6 @@ export interface Business {
 }
 
 const BUSINESSES: Business[] = [
-  { id: 'pennino', name: 'Pennino Contabilità', phone: '+39 ***-***-1234' },
   { id: 'mercatone', name: 'Mercatone della Frutta', phone: '+39 ***-***-5678' },
 ];
 
@@ -39,25 +38,45 @@ export class AuthService {
     );
   }
 
-  /**
-   * Verify the OTP with the backend.
-   * If `trustDevice` is true, stores a 24-hour auth token in localStorage
-   * so the user does not need to enter an OTP again on this device.
-   */
+  /** Verify OTP with backend and authenticate user. */
   async verifyOtp(businessId: string, otp: string, trustDevice: boolean): Promise<boolean> {
     try {
       await firstValueFrom(
         this.http.post('/api/auth/verify-otp', { businessId, otp })
       );
-      const business = BUSINESSES.find(b => b.id === businessId) ?? null;
-      this.currentBusiness.set(business);
-      this.isAuthenticated.set(true);
-      if (trustDevice) {
-        localStorage.setItem(
-          this.STORAGE_KEY,
-          JSON.stringify({ businessId, expiresAt: Date.now() + DEVICE_TTL_MS })
-        );
-      }
+      this.authenticateBusiness(businessId, trustDevice);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Password fallback login when OTP is unavailable/quota exhausted. */
+  async loginWithPassword(businessId: string, password: string, trustDevice: boolean): Promise<boolean> {
+    try {
+      await firstValueFrom(
+        this.http.post('/api/auth/login-password', { businessId, password })
+      );
+      this.authenticateBusiness(businessId, trustDevice);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Change current business password by validating old password. */
+  async changePassword(oldPassword: string, newPassword: string): Promise<boolean> {
+    const businessId = this.currentBusiness()?.id;
+    if (!businessId) return false;
+
+    try {
+      await firstValueFrom(
+        this.http.post('/api/auth/change-password', {
+          businessId,
+          oldPassword,
+          newPassword,
+        })
+      );
       return true;
     } catch {
       return false;
@@ -70,18 +89,41 @@ export class AuthService {
     localStorage.removeItem(this.STORAGE_KEY);
   }
 
+  private authenticateBusiness(
+    businessId: string,
+    trustDevice: boolean,
+    keepStoredToken = false
+  ): void {
+    const business = BUSINESSES.find(b => b.id === businessId) ?? null;
+    this.currentBusiness.set(business);
+    this.isAuthenticated.set(Boolean(business));
+
+    if (!business) {
+      if (!keepStoredToken) {
+        localStorage.removeItem(this.STORAGE_KEY);
+      }
+      return;
+    }
+
+    if (trustDevice) {
+      localStorage.setItem(
+        this.STORAGE_KEY,
+        JSON.stringify({ businessId, expiresAt: Date.now() + DEVICE_TTL_MS })
+      );
+      return;
+    }
+
+    localStorage.removeItem(this.STORAGE_KEY);
+  }
+
   private loadFromStorage(): void {
     const raw = localStorage.getItem(this.STORAGE_KEY);
     if (!raw) return;
     try {
       const { businessId, expiresAt } = JSON.parse(raw);
       if (typeof expiresAt === 'number' && expiresAt > Date.now()) {
-        const business = BUSINESSES.find(b => b.id === businessId) ?? null;
-        if (business) {
-          this.currentBusiness.set(business);
-          this.isAuthenticated.set(true);
-          return;
-        }
+        this.authenticateBusiness(businessId, false, true);
+        return;
       }
       // Expired or invalid — clear it
       localStorage.removeItem(this.STORAGE_KEY);

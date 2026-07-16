@@ -8,7 +8,7 @@ Progressive Web App (PWA) realizzata con **Angular 18** e **TailwindCSS** per so
 
 | Funzione | Dettaglio |
 |---|---|
-| 🔐 Login con 2FA | Selezione attività + password + OTP a 6 cifre |
+| 🔐 Login Mercatone | Accesso Mercatone con OTP a 6 cifre + fallback password |
 | 📦 Gestione Prodotti | Inserimento articoli con calcolo automatico prezzi ingrosso/dettaglio |
 | 💰 Contabilità Pennino | Registrazione entrate/uscite con IVA fissa al 1.04 |
 | 📅 Navigazione mensile | Frecce avanti/indietro + input mese per ogni sezione |
@@ -30,10 +30,9 @@ Progressive Web App (PWA) realizzata con **Angular 18** e **TailwindCSS** per so
 
 | Attività | Business ID | Password |
 |---|---|---|
-| Pennino Contabilità | `pennino` | `pennino2024` |
-| Mercatone della Frutta | `mercatone` | `frutta2024` |
+| Mercatone della Frutta | `mercatone` | `Mercatone2025!` |
 
-> **2FA demo**: l'OTP viene stampato nella **console del browser** (DevTools → Console). In produzione sostituire con invio via SMS o email.
+> **2FA demo**: l'OTP viene stampato nella **console del browser** (DevTools → Console). Se il provider OTP è esaurito/non disponibile, è possibile accedere con la password Mercatone e cambiarla da **La mia pagina**.
 
 ---
 
@@ -117,6 +116,10 @@ Le API serverless si trovano nella cartella `functions/` e vengono eseguite auto
 | `/api/accounting` | `GET` | Legge tutte le registrazioni contabili da D1 |
 | `/api/accounting` | `POST` | Salva una nuova registrazione su D1 |
 | `/api/accounting/:id` | `DELETE` | Elimina una registrazione da D1 |
+| `/api/auth/send-otp` | `POST` | Invia OTP per login Mercatone |
+| `/api/auth/verify-otp` | `POST` | Verifica OTP Mercatone |
+| `/api/auth/login-password` | `POST` | Login fallback con password Mercatone |
+| `/api/auth/change-password` | `POST` | Cambio password da La mia pagina |
 
 L'app Angular chiama queste API tramite HTTP per leggere e salvare i dati.
 
@@ -151,11 +154,13 @@ src/
 │   │   ├── data.service.ts      # Chiamate HTTP alle API D1
 │   │   └── excel.service.ts     # Export XLSX
 │   ├── login/
-│   │   └── login.component.ts   # Pagina di login con 2FA
+│   │   └── login.component.ts   # Login Mercatone con OTP + fallback password
 │   ├── products/
 │   │   └── products.component.ts # Gestione prodotti
 │   ├── accounting/
 │   │   └── accounting.component.ts # Contabilità Pennino
+│   ├── profile/
+│   │   └── profile.component.ts   # La mia pagina (cambio password)
 │   ├── app.component.ts         # Layout con Navbar e Footer bar
 │   ├── app.routes.ts            # Routing con lazy loading
 │   └── app.config.ts            # Configurazione app + PWA + HttpClient
@@ -166,9 +171,14 @@ functions/
 │   ├── products/
 │   │   ├── index.js             # GET /api/products, POST /api/products
 │   │   └── [id].js              # DELETE /api/products/:id
-│   └── accounting/
-│       ├── index.js             # GET /api/accounting, POST /api/accounting
-│       └── [id].js              # DELETE /api/accounting/:id
+│   ├── accounting/
+│   │   ├── index.js             # GET /api/accounting, POST /api/accounting
+│   │   └── [id].js              # DELETE /api/accounting/:id
+│   └── auth/
+│       ├── send-otp.js          # POST /api/auth/send-otp
+│       ├── verify-otp.js        # POST /api/auth/verify-otp
+│       ├── login-password.js    # POST /api/auth/login-password
+│       └── change-password.js   # POST /api/auth/change-password
 public/
 ├── manifest.webmanifest         # Manifest PWA
 └── icons/                       # Icone per installazione
