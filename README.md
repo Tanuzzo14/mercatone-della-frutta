@@ -30,7 +30,7 @@ Progressive Web App (PWA) realizzata con **Angular 18** e **TailwindCSS** per so
 
 | Attività | Business ID | Password |
 |---|---|---|
-| ***** della Frutta | `*****` | `*****2025!` |
+| ***** della Frutta | `*****` | `*********!` |
 
 > **2FA demo**: l'OTP viene stampato nella **console del browser** (DevTools → Console). Se il provider OTP è esaurito/non disponibile, è possibile accedere con la password ***** e cambiarla da **La mia pagina**.
 
