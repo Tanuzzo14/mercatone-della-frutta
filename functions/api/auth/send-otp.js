@@ -3,13 +3,12 @@
  * Body: { businessId: string }
  *
  * Generates a 6-digit OTP, stores it in D1 with a 60-second expiry,
- * then sends the code via TextBelt to PHONE_NUMBER_1 and PHONE_NUMBER_2.
+ * then sends the code via TextBelt to PHONE_NUMBER_1.
  *
  * Required environment variables (set in Cloudflare Pages dashboard):
- *   PHONE_NUMBER_1   – first recipient phone number
- *   PHONE_NUMBER_2   – second recipient phone number
- *   TEXTBELT_URL     – TextBelt server endpoint (e.g. http://your-server/text)
- *   TEXTBELT_KEY     – (optional) API key for textbelt.com paid version
+ *   PHONE_NUMBER_1   – recipient phone number
+ *   TEXTBELT_URL     – (optional) TextBelt endpoint (defaults to https://textbelt.com/text)
+ *   TEXTBELT_KEY     – (optional) API key (defaults to the free "textbelt" key)
  */
 
 const VALID_BUSINESS_IDS = ['pennino', 'mercatone'];
@@ -41,21 +40,20 @@ export async function onRequestPost({ request, env }) {
       .run();
 
     const message = `ecco il codice per entrare su mercatone della frutta: ${otp}`;
-    const textbeltUrl = env.TEXTBELT_URL;
-    const phones = [env.PHONE_NUMBER_1, env.PHONE_NUMBER_2].filter(Boolean);
+    const textbeltUrl = env.TEXTBELT_URL || 'https://textbelt.com/text';
+    const phone = env.PHONE_NUMBER_1;
+    const key = env.TEXTBELT_KEY || 'textbelt';
 
-    if (textbeltUrl && phones.length > 0) {
-      await Promise.all(
-        phones.map((number) => {
-          const body = new URLSearchParams({ number, message });
-          if (env.TEXTBELT_KEY) {
-            body.set('key', env.TEXTBELT_KEY);
-          }
-          return fetch(textbeltUrl, { method: 'POST', body });
-        })
-      );
+    if (phone) {
+      const body = new URLSearchParams({ phone, message, key });
+      const response = await fetch(textbeltUrl, { method: 'POST', body });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Errore nell'invio dell'OTP");
+      }
     } else {
-      console.warn('[OTP] TEXTBELT_URL o PHONE_NUMBER_* non configurati – OTP:', otp);
+      console.warn('[OTP] PHONE_NUMBER_1 non configurato – OTP:', otp);
     }
 
     return Response.json({ success: true });
