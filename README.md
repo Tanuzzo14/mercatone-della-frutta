@@ -14,7 +14,7 @@ Progressive Web App (PWA) realizzata con **Angular 18** e **TailwindCSS** per so
 | 📅 Navigazione mensile | Frecce avanti/indietro + input mese per ogni sezione |
 | 📱 Mobile-first | Inserimento dati da mobile, footer bar di navigazione |
 | 📥 Export XLSX | Esportazione mensilità per ogni sezione |
-| 💾 Persistenza dati | Dati salvati in localStorage (no backend necessario) |
+| ☁️ Persistenza dati | Dati salvati su Cloudflare D1 (SQLite serverless) |
 | ✅ Installabile | PWA con Service Worker, installabile su Android da Chrome |
 
 ---
@@ -37,69 +37,106 @@ Progressive Web App (PWA) realizzata con **Angular 18** e **TailwindCSS** per so
 
 ---
 
+## Deploy su Cloudflare Pages da GitHub
+
+### Tutto automatizzato — basta un push su `main`.
+
+### 1. Crea il database D1
+
+```bash
+# Installa wrangler (una volta sola)
+npm install -g wrangler
+wrangler login
+
+# Crea il database D1
+wrangler d1 create mercatone-db
+
+# Copia il database_id mostrato nell'output e incollalo in wrangler.toml
+# Sostituisci YOUR_D1_DATABASE_ID con l'ID ottenuto
+
+# Inizializza le tabelle
+wrangler d1 execute mercatone-db --file=schema.sql
+```
+
+### 2. Aggiorna `wrangler.toml`
+
+Apri `wrangler.toml` e sostituisci `YOUR_D1_DATABASE_ID` con l'ID ottenuto al passo precedente:
+
+```toml
+name = "mercatone-della-frutta"
+pages_build_output_dir = "dist/gestionale-pwa/browser"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mercatone-db"
+database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # ← il tuo ID
+```
+
+### 3. Collega il repository a Cloudflare Pages
+
+1. Vai su [Cloudflare Dashboard](https://dash.cloudflare.com) → **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**
+2. Seleziona il repository `mercatone-della-frutta`
+3. Impostazioni di build:
+   - **Build command**: `npm run build`
+   - **Build output directory**: `dist/gestionale-pwa/browser`
+   - *(Cloudflare leggerà queste impostazioni anche da `wrangler.toml`)*
+4. Clicca **Save and Deploy**
+
+### 4. Collega il database D1 al progetto Pages
+
+1. Vai su **Workers & Pages** → il tuo progetto → **Settings** → **Bindings**
+2. Clicca **Add binding** → **D1 database**
+3. Imposta:
+   - **Variable name**: `DB`
+   - **D1 database**: seleziona `mercatone-db`
+4. Salva e rideploya
+
+### 5. Push e deploy automatico
+
+Da questo momento ogni push su `main` avvia automaticamente il deploy:
+
+```bash
+git add .
+git commit -m "feat: aggiornamento"
+git push origin main
+```
+
+L'app sarà disponibile su `https://mercatone-della-frutta.pages.dev`
+
+---
+
+## Architettura backend (Cloudflare Functions + D1)
+
+Le API serverless si trovano nella cartella `functions/` e vengono eseguite automaticamente da Cloudflare Pages:
+
+| Endpoint | Metodo | Descrizione |
+|---|---|---|
+| `/api/products` | `GET` | Legge tutti i prodotti dal database D1 |
+| `/api/products` | `POST` | Salva un nuovo prodotto su D1 |
+| `/api/products/:id` | `DELETE` | Elimina un prodotto da D1 |
+| `/api/accounting` | `GET` | Legge tutte le registrazioni contabili da D1 |
+| `/api/accounting` | `POST` | Salva una nuova registrazione su D1 |
+| `/api/accounting/:id` | `DELETE` | Elimina una registrazione da D1 |
+
+L'app Angular chiama queste API tramite HTTP per leggere e salvare i dati.
+
+---
+
 ## Sviluppo locale
 
 ```bash
 # Installa le dipendenze
 npm install
 
-# Avvia server di sviluppo (http://localhost:4200)
+# Sviluppo locale CON le funzioni (richiede wrangler)
+npx wrangler pages dev -- ng serve --configuration development
+
+# Solo frontend senza backend (le API non saranno disponibili)
 npm run start
 
 # Build di produzione
-npm run build -- --configuration production
+npm run build
 ```
-
----
-
-## Deploy su Cloudflare Pages via GitLab CI/CD
-
-### Nessun tool locale richiesto — tutto automatizzato tramite GitLab.
-
-### 1. Prerequisiti
-
-- Un account su [Cloudflare](https://cloudflare.com)
-- Un repository su GitLab con questo codice
-- Un progetto Cloudflare Pages già creato (o verrà creato al primo deploy)
-
-### 2. Genera un API Token Cloudflare
-
-1. Vai su [Cloudflare Dashboard](https://dash.cloudflare.com) → **My Profile** → **API Tokens**
-2. Clicca **Create Token** → usa il template **Edit Cloudflare Workers**
-3. Aggiungi il permesso: `Account > Cloudflare Pages > Edit`
-4. Copia il token generato
-
-### 3. Ottieni il tuo Account ID
-
-Vai su **Cloudflare Dashboard** → sidebar destra → copia il valore sotto **Account ID**.
-
-### 4. Configura le variabili su GitLab
-
-Nel tuo repository GitLab, vai su **Settings → CI/CD → Variables** e aggiungi:
-
-| Variabile | Valore | Opzioni |
-|---|---|---|
-| `CLOUDFLARE_ACCOUNT_ID` | Il tuo Account ID Cloudflare | Protected, Masked |
-| `CLOUDFLARE_API_TOKEN` | Il token API generato | Protected, Masked |
-| `CLOUDFLARE_PROJECT_NAME` | Nome del progetto Pages (es. `gestionale-pwa`) | Protected |
-
-### 5. Push e deploy automatico
-
-```bash
-git add .
-git commit -m "feat: initial deploy"
-git push origin main
-```
-
-La pipeline GitLab si avvierà automaticamente e:
-1. **Build**: installa dipendenze e compila Angular in produzione
-2. **Deploy**: pubblica `dist/gestionale-pwa/browser/` su Cloudflare Pages
-
-L'app sarà disponibile su `https://<CLOUDFLARE_PROJECT_NAME>.pages.dev`
-
-### 6. Configurazione dominio personalizzato (opzionale)
-
-Su Cloudflare Dashboard → Pages → il tuo progetto → **Custom domains** → aggiungi il tuo dominio.
 
 ---
 
@@ -111,23 +148,32 @@ src/
 │   ├── auth/
 │   │   ├── auth.service.ts      # Autenticazione + 2FA
 │   │   ├── auth.guard.ts        # Route guard
-│   │   ├── data.service.ts      # Persistenza dati (localStorage)
+│   │   ├── data.service.ts      # Chiamate HTTP alle API D1
 │   │   └── excel.service.ts     # Export XLSX
 │   ├── login/
 │   │   └── login.component.ts   # Pagina di login con 2FA
 │   ├── products/
-│   │   └── products.component.ts # Gestione prodotti (media 15-7)
+│   │   └── products.component.ts # Gestione prodotti
 │   ├── accounting/
 │   │   └── accounting.component.ts # Contabilità Pennino
 │   ├── app.component.ts         # Layout con Navbar e Footer bar
 │   ├── app.routes.ts            # Routing con lazy loading
-│   └── app.config.ts            # Configurazione app + PWA
+│   └── app.config.ts            # Configurazione app + PWA + HttpClient
 ├── index.html
 └── styles.css                   # TailwindCSS
+functions/
+├── api/
+│   ├── products/
+│   │   ├── index.js             # GET /api/products, POST /api/products
+│   │   └── [id].js              # DELETE /api/products/:id
+│   └── accounting/
+│       ├── index.js             # GET /api/accounting, POST /api/accounting
+│       └── [id].js              # DELETE /api/accounting/:id
 public/
 ├── manifest.webmanifest         # Manifest PWA
 └── icons/                       # Icone per installazione
-.gitlab-ci.yml                   # Pipeline CI/CD per Cloudflare Pages
+schema.sql                       # Schema SQL per inizializzare D1
+wrangler.toml                    # Configurazione Cloudflare Pages + D1
 ```
 
 ---
@@ -151,4 +197,4 @@ Il sistema 2FA incluso è una **implementazione dimostrativa** con OTP visibile 
 
 ---
 
-*Progettato e sviluppato per Mercatone della Frutta — PWA v1.0*
+*Progettato e sviluppato per Mercatone della Frutta — PWA v2.0*

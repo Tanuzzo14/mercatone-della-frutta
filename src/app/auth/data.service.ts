@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 export interface ProductRow {
   id: string;
@@ -19,11 +20,10 @@ export interface AccountingRow {
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
-  private readonly PRODUCTS_KEY = 'gestionaleProducts';
-  private readonly ACCOUNTING_KEY = 'gestionaleAccounting';
+  private http = inject(HttpClient);
 
-  private _products: ProductRow[] = [];
-  private _accounting: AccountingRow[] = [];
+  private _products = signal<ProductRow[]>([]);
+  private _accounting = signal<AccountingRow[]>([]);
 
   constructor() {
     this.load();
@@ -31,55 +31,54 @@ export class DataService {
 
   // PRODUCTS
   getProducts(mese: string): ProductRow[] {
-    return this._products.filter(p => p.mese === mese);
+    return this._products().filter(p => p.mese === mese);
   }
 
   addProduct(row: Omit<ProductRow, 'id'>): void {
-    this._products.push({ ...row, id: crypto.randomUUID() });
-    this.save();
+    this.http.post<ProductRow>('/api/products', row).subscribe(created => {
+      this._products.update(list => [...list, created]);
+    });
   }
 
   deleteProduct(id: string): void {
-    this._products = this._products.filter(p => p.id !== id);
-    this.save();
+    this.http.delete(`/api/products/${id}`).subscribe(() => {
+      this._products.update(list => list.filter(p => p.id !== id));
+    });
   }
 
   getProductMonths(): string[] {
-    return [...new Set(this._products.map(p => p.mese))].sort();
+    return [...new Set(this._products().map(p => p.mese))].sort();
   }
 
   // ACCOUNTING
   getAccounting(mese: string): AccountingRow[] {
-    return this._accounting.filter(r => r.mese === mese);
+    return this._accounting().filter(r => r.mese === mese);
   }
 
   addAccounting(row: Omit<AccountingRow, 'id'>): void {
-    this._accounting.push({ ...row, id: crypto.randomUUID() });
-    this.save();
+    this.http.post<AccountingRow>('/api/accounting', row).subscribe(created => {
+      this._accounting.update(list => [...list, created]);
+    });
   }
 
   deleteAccounting(id: string): void {
-    this._accounting = this._accounting.filter(r => r.id !== id);
-    this.save();
+    this.http.delete(`/api/accounting/${id}`).subscribe(() => {
+      this._accounting.update(list => list.filter(r => r.id !== id));
+    });
   }
 
   getAccountingMonths(): string[] {
-    return [...new Set(this._accounting.map(r => r.mese))].sort();
-  }
-
-  private save(): void {
-    localStorage.setItem(this.PRODUCTS_KEY, JSON.stringify(this._products));
-    localStorage.setItem(this.ACCOUNTING_KEY, JSON.stringify(this._accounting));
+    return [...new Set(this._accounting().map(r => r.mese))].sort();
   }
 
   private load(): void {
-    try {
-      const p = localStorage.getItem(this.PRODUCTS_KEY);
-      if (p) this._products = JSON.parse(p);
-      const a = localStorage.getItem(this.ACCOUNTING_KEY);
-      if (a) this._accounting = JSON.parse(a);
-    } catch {
-      // ignore
-    }
+    this.http.get<ProductRow[]>('/api/products').subscribe({
+      next: data => this._products.set(data),
+      error: () => { /* API non disponibile in locale senza wrangler pages dev */ }
+    });
+    this.http.get<AccountingRow[]>('/api/accounting').subscribe({
+      next: data => this._accounting.set(data),
+      error: () => { /* API non disponibile in locale senza wrangler pages dev */ }
+    });
   }
 }
