@@ -54,14 +54,12 @@ type LoginStep = 'business' | 'otp' | 'password';
                 }
               </button>
 
-              @if (allowPasswordFallback()) {
-                <button
-                  (click)="openPasswordLogin()"
-                  class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-semibold transition-all"
-                >
-                  Accedi con password
-                </button>
-              }
+              <button
+                (click)="openPasswordLogin()"
+                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-semibold transition-all"
+              >
+                Accedi con password
+              </button>
             </div>
           }
 
@@ -152,14 +150,12 @@ type LoginStep = 'business' | 'otp' | 'password';
                 }
               </button>
 
-              @if (allowPasswordFallback()) {
-                <button
-                  (click)="openPasswordLogin()"
-                  class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-semibold transition-all"
-                >
-                  OTP non disponibile? Accedi con password
-                </button>
-              }
+              <button
+                (click)="openPasswordLogin()"
+                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-xl font-semibold transition-all"
+              >
+                OTP non disponibile? Accedi con password
+              </button>
             </div>
           }
 
