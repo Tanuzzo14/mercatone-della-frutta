@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from './auth/auth.service';
+import { PwaInstallService } from './pwa-install.service';
 
 @Component({
   selector: 'app-root',
@@ -44,6 +45,11 @@ import { AuthService } from './auth/auth.service';
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A9 9 0 1118.88 17.8M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 La mia pagina
               </a>
+              <button (click)="installApp()" [disabled]="pwaInstall.isInstalling()"
+                class="ml-1 px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:bg-white/10 hover:text-white transition-all flex items-center gap-1 disabled:opacity-70 disabled:cursor-not-allowed">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"/></svg>
+                Installa App
+              </button>
               <button (click)="logout()"
                 class="ml-3 px-3 py-2 rounded-lg text-sm font-medium text-blue-200 hover:bg-red-500/20 hover:text-red-200 transition-all flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -51,11 +57,32 @@ import { AuthService } from './auth/auth.service';
               </button>
             </div>
 
-            <!-- Mobile: logout button -->
-            <button (click)="logout()" class="sm:hidden p-2 rounded-lg text-blue-200 hover:bg-white/10 transition-all">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-            </button>
+            <!-- Mobile actions -->
+            <div class="sm:hidden flex items-center gap-2">
+              <button (click)="installApp()" [disabled]="pwaInstall.isInstalling()"
+                class="p-2 rounded-lg text-blue-200 hover:bg-white/10 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                aria-label="Installa App">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"/></svg>
+              </button>
+              <button (click)="logout()" class="p-2 rounded-lg text-blue-200 hover:bg-white/10 transition-all" aria-label="Esci">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              </button>
+            </div>
           </div>
+          @if (pwaInstall.feedback(); as feedback) {
+            <div class="max-w-4xl mx-auto px-4 pb-2">
+              <p class="text-xs"
+                 [class.text-green-200]="feedback.type === 'success'"
+                 [class.text-yellow-100]="feedback.type === 'info'"
+                 [class.text-red-200]="feedback.type === 'error'">
+                {{ feedback.message }}
+              </p>
+            </div>
+          } @else {
+            <div class="max-w-4xl mx-auto px-4 pb-2">
+              <p class="text-xs text-blue-200">{{ pwaInstall.availabilityMessage() }}</p>
+            </div>
+          }
         </nav>
       }
 
@@ -119,7 +146,12 @@ import { AuthService } from './auth/auth.service';
 })
 export class AppComponent {
   auth = inject(AuthService);
+  pwaInstall = inject(PwaInstallService);
   private router = inject(Router);
+
+  installApp(): void {
+    void this.pwaInstall.installApp();
+  }
 
   logout(): void {
     this.auth.logout();
