@@ -1,4 +1,4 @@
-# Gestionale PWA — Mercatone della Frutta
+# Gestionale PWA — ***** della Frutta
 
 Progressive Web App (PWA) realizzata con **Angular 18** e **TailwindCSS** per sostituire i fogli Excel di gestione prodotti e contabilità. Installabile su Android come app nativa.
 
@@ -8,7 +8,7 @@ Progressive Web App (PWA) realizzata con **Angular 18** e **TailwindCSS** per so
 
 | Funzione | Dettaglio |
 |---|---|
-| 🔐 Login Mercatone | Accesso Mercatone con OTP a 6 cifre + fallback password |
+| 🔐 Login ***** | Accesso ***** con OTP a 6 cifre + fallback password |
 | 📦 Gestione Prodotti | Inserimento articoli con calcolo automatico prezzi ingrosso/dettaglio |
 | 💰 Contabilità Pennino | Registrazione entrate/uscite con IVA fissa al 1.04 |
 | 📅 Navigazione mensile | Frecce avanti/indietro + input mese per ogni sezione |
@@ -30,9 +30,9 @@ Progressive Web App (PWA) realizzata con **Angular 18** e **TailwindCSS** per so
 
 | Attività | Business ID | Password |
 |---|---|---|
-| Mercatone della Frutta | `mercatone` | `Mercatone2025!` |
+| ***** della Frutta | `*****` | `*****2025!` |
 
-> **2FA demo**: l'OTP viene stampato nella **console del browser** (DevTools → Console). Se il provider OTP è esaurito/non disponibile, è possibile accedere con la password Mercatone e cambiarla da **La mia pagina**.
+> **2FA demo**: l'OTP viene stampato nella **console del browser** (DevTools → Console). Se il provider OTP è esaurito/non disponibile, è possibile accedere con la password ***** e cambiarla da **La mia pagina**.
 
 ---
 
@@ -48,13 +48,13 @@ npm install -g wrangler
 wrangler login
 
 # Crea il database D1
-wrangler d1 create mercatone-db
+wrangler d1 create *****-db
 
 # Copia il database_id mostrato nell'output e incollalo in wrangler.toml
 # Sostituisci YOUR_D1_DATABASE_ID con l'ID ottenuto
 
 # Inizializza le tabelle
-wrangler d1 execute mercatone-db --file=schema.sql
+wrangler d1 execute *****-db --file=schema.sql
 ```
 
 ### 2. Aggiorna `wrangler.toml`
@@ -62,19 +62,19 @@ wrangler d1 execute mercatone-db --file=schema.sql
 Apri `wrangler.toml` e sostituisci `YOUR_D1_DATABASE_ID` con l'ID ottenuto al passo precedente:
 
 ```toml
-name = "mercatone-della-frutta"
+name = "*****-della-frutta"
 pages_build_output_dir = "dist/gestionale-pwa/browser"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "mercatone-db"
+database_name = "*****-db"
 database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # ← il tuo ID
 ```
 
 ### 3. Collega il repository a Cloudflare Pages
 
 1. Vai su [Cloudflare Dashboard](https://dash.cloudflare.com) → **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**
-2. Seleziona il repository `mercatone-della-frutta`
+2. Seleziona il repository `*****-della-frutta`
 3. Impostazioni di build:
    - **Build command**: `npm run build`
    - **Build output directory**: `dist/gestionale-pwa/browser`
@@ -87,7 +87,7 @@ database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # ← il tuo ID
 2. Clicca **Add binding** → **D1 database**
 3. Imposta:
    - **Variable name**: `DB`
-   - **D1 database**: seleziona `mercatone-db`
+   - **D1 database**: seleziona `*****-db`
 4. Salva e rideploya
 
 ### 5. Push e deploy automatico
@@ -100,7 +100,7 @@ git commit -m "feat: aggiornamento"
 git push origin main
 ```
 
-L'app sarà disponibile su `https://mercatone-della-frutta.pages.dev`
+L'app sarà disponibile su `https://*****-della-frutta.pages.dev`
 
 ---
 
@@ -116,9 +116,9 @@ Le API serverless si trovano nella cartella `functions/` e vengono eseguite auto
 | `/api/accounting` | `GET` | Legge tutte le registrazioni contabili da D1 |
 | `/api/accounting` | `POST` | Salva una nuova registrazione su D1 |
 | `/api/accounting/:id` | `DELETE` | Elimina una registrazione da D1 |
-| `/api/auth/send-otp` | `POST` | Invia OTP per login Mercatone |
-| `/api/auth/verify-otp` | `POST` | Verifica OTP Mercatone |
-| `/api/auth/login-password` | `POST` | Login fallback con password Mercatone |
+| `/api/auth/send-otp` | `POST` | Invia OTP per login ***** |
+| `/api/auth/verify-otp` | `POST` | Verifica OTP ***** |
+| `/api/auth/login-password` | `POST` | Login fallback con password ***** |
 | `/api/auth/change-password` | `POST` | Cambio password da La mia pagina |
 
 L'app Angular chiama queste API tramite HTTP per leggere e salvare i dati.
@@ -154,7 +154,7 @@ src/
 │   │   ├── data.service.ts      # Chiamate HTTP alle API D1
 │   │   └── excel.service.ts     # Export XLSX
 │   ├── login/
-│   │   └── login.component.ts   # Login Mercatone con OTP + fallback password
+│   │   └── login.component.ts   # Login ***** con OTP + fallback password
 │   ├── products/
 │   │   └── products.component.ts # Gestione prodotti
 │   ├── accounting/
@@ -207,4 +207,4 @@ Il sistema 2FA incluso è una **implementazione dimostrativa** con OTP visibile 
 
 ---
 
-*Progettato e sviluppato per Mercatone della Frutta — PWA v2.0*
+*Progettato e sviluppato per ***** della Frutta — PWA v2.0*
