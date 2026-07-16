@@ -1,21 +1,26 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 export interface Business {
   id: string;
   name: string;
-  password: string;
   phone: string; // masked for display
 }
 
 const BUSINESSES: Business[] = [
-  { id: 'pennino', name: 'Pennino Contabilità', password: 'pennino2024', phone: '+39 ***-***-1234' },
-  { id: 'mercatone', name: 'Mercatone della Frutta', password: 'frutta2024', phone: '+39 ***-***-5678' },
+  { id: 'pennino', name: 'Pennino Contabilità', phone: '+39 ***-***-1234' },
+  { id: 'mercatone', name: 'Mercatone della Frutta', phone: '+39 ***-***-5678' },
 ];
+
+/** Milliseconds in 24 hours */
+const DEVICE_TTL_MS = 24 * 60 * 60 * 1000;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly STORAGE_KEY = 'gestionaleAuth';
-  
+  private http = inject(HttpClient);
+
   isAuthenticated = signal<boolean>(false);
   currentBusiness = signal<Business | null>(null);
 
@@ -27,55 +32,61 @@ export class AuthService {
     return BUSINESSES;
   }
 
-  validateCredentials(businessId: string, password: string): Business | null {
-    return BUSINESSES.find(b => b.id === businessId && b.password === password) ?? null;
+  /** Send OTP via TextBelt to the configured phone numbers. */
+  async sendOtp(businessId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post('/api/auth/send-otp', { businessId })
+    );
   }
 
-  /** Generate a 6-digit OTP and "send" it (in a real app, send via SMS/email) */
-  generateOtp(business: Business): string {
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    // In production, send via SMS/email. For demo, store in sessionStorage.
-    sessionStorage.setItem('pending_otp', otp);
-    sessionStorage.setItem('pending_business', business.id);
-    console.info(`[2FA] OTP per ${business.name}: ${otp}`); // visible in devtools
-    return otp;
-  }
-
-  verifyOtp(inputOtp: string): boolean {
-    const stored = sessionStorage.getItem('pending_otp');
-    const businessId = sessionStorage.getItem('pending_business');
-    if (stored === inputOtp && businessId) {
+  /**
+   * Verify the OTP with the backend.
+   * If `trustDevice` is true, stores a 24-hour auth token in localStorage
+   * so the user does not need to enter an OTP again on this device.
+   */
+  async verifyOtp(businessId: string, otp: string, trustDevice: boolean): Promise<boolean> {
+    try {
+      await firstValueFrom(
+        this.http.post('/api/auth/verify-otp', { businessId, otp })
+      );
       const business = BUSINESSES.find(b => b.id === businessId) ?? null;
       this.currentBusiness.set(business);
       this.isAuthenticated.set(true);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ businessId }));
-      sessionStorage.removeItem('pending_otp');
-      sessionStorage.removeItem('pending_business');
+      if (trustDevice) {
+        localStorage.setItem(
+          this.STORAGE_KEY,
+          JSON.stringify({ businessId, expiresAt: Date.now() + DEVICE_TTL_MS })
+        );
+      }
       return true;
+    } catch {
+      return false;
     }
-    return false;
   }
 
   logout(): void {
     this.isAuthenticated.set(false);
     this.currentBusiness.set(null);
     localStorage.removeItem(this.STORAGE_KEY);
-    sessionStorage.clear();
   }
 
   private loadFromStorage(): void {
     const raw = localStorage.getItem(this.STORAGE_KEY);
-    if (raw) {
-      try {
-        const { businessId } = JSON.parse(raw);
+    if (!raw) return;
+    try {
+      const { businessId, expiresAt } = JSON.parse(raw);
+      if (typeof expiresAt === 'number' && expiresAt > Date.now()) {
         const business = BUSINESSES.find(b => b.id === businessId) ?? null;
         if (business) {
           this.currentBusiness.set(business);
           this.isAuthenticated.set(true);
+          return;
         }
-      } catch {
-        // ignore parse errors
       }
+      // Expired or invalid — clear it
+      localStorage.removeItem(this.STORAGE_KEY);
+    } catch {
+      localStorage.removeItem(this.STORAGE_KEY);
     }
   }
 }

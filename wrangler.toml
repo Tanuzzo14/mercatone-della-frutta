@@ -5,3 +5,14 @@ pages_build_output_dir = "dist/gestionale-pwa/browser"
 binding = "DB"
 database_name = "mercatone-della-frutta"
 database_id = "fcf01dbf-fb6c-4723-992c-00e25ca88274"
+
+# ---------------------------------------------------------------------------
+# Required secrets — set these in the Cloudflare Pages dashboard under
+# Settings → Environment variables (mark them as "Secret"):
+#
+#   PHONE_NUMBER_1   Phone number of the first recipient (e.g. +393471234567)
+#   PHONE_NUMBER_2   Phone number of the second recipient (e.g. +393497654321)
+#   TEXTBELT_URL     Your TextBelt Open Source server endpoint
+#                    (e.g. http://your-server:9090/text)
+#   TEXTBELT_KEY     (optional) API key – only needed for textbelt.com paid
+# ---------------------------------------------------------------------------

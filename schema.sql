@@ -14,6 +14,15 @@ CREATE TABLE IF NOT EXISTS products (
   totCasse  REAL NOT NULL DEFAULT 0
 );
 
+-- OTP codes (expire after 60 s; used = 1 once consumed)
+CREATE TABLE IF NOT EXISTS otp_codes (
+  id          TEXT    PRIMARY KEY,
+  business_id TEXT    NOT NULL,
+  code        TEXT    NOT NULL,
+  expires_at  INTEGER NOT NULL,
+  used        INTEGER NOT NULL DEFAULT 0
+);
+
 -- Foglio: Pennino (PENNINO AZIENDA CALCOLO ENTRATE +USCITE REVISIONATO.xlsx - acq+ vendite revisio)
 -- Colonne: FATT ACQ | data | denom | vendite | data vend | deno vend
 -- Totali calcolati: tot acq+giac (somma fattAcq), tot vend (somma vendite), acq-vend
