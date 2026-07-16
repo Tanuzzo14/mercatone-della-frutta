@@ -31,8 +31,8 @@ import { ExcelService } from '../auth/excel.service';
           <p class="text-2xl font-bold text-blue-700">{{ filteredProducts().length }}</p>
         </div>
         <div class="card text-center">
-          <p class="text-xs text-gray-500 mb-1">Valore totale KG</p>
-          <p class="text-2xl font-bold text-emerald-700">€{{ totalValue() }}</p>
+          <p class="text-xs text-gray-500 mb-1">Tot. Importo Mese</p>
+          <p class="text-2xl font-bold text-emerald-700">€{{ totalImporto() }}</p>
         </div>
       </div>
 
@@ -44,11 +44,15 @@ import { ExcelService } from '../auth/excel.service';
         </h3>
 
         <div class="space-y-3">
-          <input type="text" placeholder="Articolo (es. Avocado, Mele Royal)" [(ngModel)]="newProd.articolo"
-            class="input-field" autocomplete="off" autocapitalize="words" />
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Articolo</label>
+            <input type="text" placeholder="Es. Avocado, Mele Royal, Datter Giallo" [(ngModel)]="newProd.articolo"
+              class="input-field" autocomplete="off" autocapitalize="words" />
+          </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Quantità</label>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Quantità (Q.tà)</label>
               <input type="number" inputmode="decimal" placeholder="0" [(ngModel)]="newProd.quantita"
                 min="0" class="input-field" />
             </div>
@@ -59,17 +63,30 @@ import { ExcelService } from '../auth/excel.service';
             </div>
           </div>
 
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">IVA</label>
+              <input type="number" inputmode="decimal" placeholder="1.04" [(ngModel)]="newProd.iva"
+                min="1" step="0.01" class="input-field" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Divisore</label>
+              <input type="number" inputmode="decimal" placeholder="1" [(ngModel)]="newProd.divi"
+                min="1" step="1" class="input-field" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Tot. Casse</label>
+              <input type="number" inputmode="decimal" placeholder="0.00" [(ngModel)]="newProd.totCasse"
+                min="0" step="0.01" class="input-field" />
+            </div>
+          </div>
+
           <!-- Live preview -->
           @if (newProd.prezzoKg && newProd.prezzoKg > 0) {
-            <div class="bg-blue-50 rounded-xl p-3 grid grid-cols-2 gap-2 text-sm">
-              <div class="text-center">
-                <p class="text-xs text-gray-500">Ingrosso (+10%)</p>
-                <p class="font-bold text-emerald-700">€{{ (newProd.prezzoKg * 1.10).toFixed(2) }}</p>
-              </div>
-              <div class="text-center">
-                <p class="text-xs text-gray-500">Dettaglio (+25%)</p>
-                <p class="font-bold text-purple-700">€{{ (newProd.prezzoKg * 1.25).toFixed(2) }}</p>
-              </div>
+            <div class="bg-blue-50 rounded-xl p-3 text-sm text-center">
+              <p class="text-xs text-gray-500 mb-1">Tot. Importo (calcolato)</p>
+              <p class="font-bold text-blue-700 text-lg">€{{ calcTotImpo(newProd).toFixed(2) }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">Q.tà × Prezzo/KG × IVA ÷ Div + Tot.Casse</p>
             </div>
           }
 
@@ -86,11 +103,13 @@ import { ExcelService } from '../auth/excel.service';
             <table class="w-full text-sm">
               <thead>
                 <tr class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-                  <th class="p-3 text-left font-semibold">Articolo</th>
-                  <th class="p-3 text-center font-semibold whitespace-nowrap">Q.tà</th>
-                  <th class="p-3 text-center font-semibold whitespace-nowrap">€/KG</th>
-                  <th class="p-3 text-center font-semibold whitespace-nowrap text-emerald-200">+10%</th>
-                  <th class="p-3 text-center font-semibold whitespace-nowrap text-purple-200">+25%</th>
+                  <th class="p-3 text-left font-semibold">ARTICOLO</th>
+                  <th class="p-3 text-center font-semibold whitespace-nowrap">QUANTI</th>
+                  <th class="p-3 text-center font-semibold whitespace-nowrap">PREZ KG</th>
+                  <th class="p-3 text-center font-semibold whitespace-nowrap">IVA</th>
+                  <th class="p-3 text-center font-semibold whitespace-nowrap">DIVI</th>
+                  <th class="p-3 text-center font-semibold whitespace-nowrap">tot casse</th>
+                  <th class="p-3 text-center font-semibold whitespace-nowrap text-emerald-200">tot impo</th>
                   <th class="p-3 text-center font-semibold w-10"></th>
                 </tr>
               </thead>
@@ -100,8 +119,10 @@ import { ExcelService } from '../auth/excel.service';
                     <td class="p-3 font-medium text-gray-800">{{ p.articolo }}</td>
                     <td class="p-3 text-center text-gray-600">{{ p.quantita }}</td>
                     <td class="p-3 text-center font-semibold text-gray-800">€{{ p.prezzoKg.toFixed(2) }}</td>
-                    <td class="p-3 text-center font-bold text-emerald-700">€{{ (p.prezzoKg * 1.10).toFixed(2) }}</td>
-                    <td class="p-3 text-center font-bold text-purple-700">€{{ (p.prezzoKg * 1.25).toFixed(2) }}</td>
+                    <td class="p-3 text-center text-gray-600">{{ p.iva }}</td>
+                    <td class="p-3 text-center text-gray-600">{{ p.divi }}</td>
+                    <td class="p-3 text-center text-gray-600">€{{ p.totCasse.toFixed(2) }}</td>
+                    <td class="p-3 text-center font-bold text-emerald-700">€{{ calcTotImpo(p).toFixed(2) }}</td>
                     <td class="p-3 text-center">
                       <button (click)="deleteProduct(p.id)" class="text-red-400 hover:text-red-600 transition-colors p-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -110,6 +131,13 @@ import { ExcelService } from '../auth/excel.service';
                   </tr>
                 }
               </tbody>
+              <tfoot>
+                <tr class="bg-gray-100 font-bold text-sm border-t-2 border-gray-200">
+                  <td class="p-3 text-gray-700" colspan="6">TOTALE MESE</td>
+                  <td class="p-3 text-center text-emerald-700">€{{ totalImporto() }}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -133,11 +161,11 @@ export class ProductsComponent implements OnInit {
   private excelService = inject(ExcelService);
 
   selectedMonth = signal(new Date().toISOString().slice(0, 7));
-  newProd = { articolo: '', quantita: 0, prezzoKg: 0 };
+  newProd = { articolo: '', quantita: 0, prezzoKg: 0, iva: 1.04, divi: 1, totCasse: 0 };
 
   filteredProducts = computed(() => this.dataService.getProducts(this.selectedMonth()));
-  totalValue = computed(() =>
-    this.filteredProducts().reduce((sum, p) => sum + (p.prezzoKg * (p.quantita || 1)), 0).toFixed(2)
+  totalImporto = computed(() =>
+    this.filteredProducts().reduce((sum, p) => sum + this.calcTotImpo(p), 0).toFixed(2)
   );
   monthLabel = computed(() => {
     const [year, month] = this.selectedMonth().split('-');
@@ -146,6 +174,11 @@ export class ProductsComponent implements OnInit {
 
   ngOnInit(): void {}
 
+  calcTotImpo(p: { quantita: number; prezzoKg: number; iva: number; divi: number; totCasse: number }): number {
+    const divi = p.divi || 1;
+    return (p.quantita * p.prezzoKg * p.iva) / divi + p.totCasse;
+  }
+
   addProduct(): void {
     if (!this.newProd.articolo || !this.newProd.prezzoKg) return;
     this.dataService.addProduct({
@@ -153,8 +186,11 @@ export class ProductsComponent implements OnInit {
       articolo: this.newProd.articolo.trim(),
       quantita: this.newProd.quantita || 0,
       prezzoKg: this.newProd.prezzoKg,
+      iva: this.newProd.iva || 1.04,
+      divi: this.newProd.divi || 1,
+      totCasse: this.newProd.totCasse || 0,
     });
-    this.newProd = { articolo: '', quantita: 0, prezzoKg: 0 };
+    this.newProd = { articolo: '', quantita: 0, prezzoKg: 0, iva: 1.04, divi: 1, totCasse: 0 };
   }
 
   deleteProduct(id: string): void {
@@ -175,12 +211,14 @@ export class ProductsComponent implements OnInit {
 
   exportExcel(): void {
     const data = this.filteredProducts().map(p => ({
-      'Articolo': p.articolo,
-      'Quantità': p.quantita,
-      'Prezzo al KG (€)': p.prezzoKg,
-      'Prezzo Minimo Ingrosso +10% (€)': +(p.prezzoKg * 1.10).toFixed(2),
-      'Prezzo Minimo Dettaglio +25% (€)': +(p.prezzoKg * 1.25).toFixed(2),
+      'ARTICOLO': p.articolo,
+      'QUANTI': p.quantita,
+      'PREZ KG': p.prezzoKg,
+      'IVA': p.iva,
+      'DIVI': p.divi,
+      'tot casse': p.totCasse,
+      'tot impo': +this.calcTotImpo(p).toFixed(2),
     }));
-    this.excelService.exportToExcel(data, `Prodotti_${this.selectedMonth()}`);
+    this.excelService.exportToExcel(data, `InserimentoProdotti_${this.selectedMonth()}`);
   }
 }

@@ -32,12 +32,12 @@ import { AuthService } from './auth/auth.service';
               <a routerLink="/products" routerLinkActive="bg-white/20 text-white"
                 class="px-4 py-2 rounded-lg text-sm font-medium text-blue-100 hover:bg-white/10 hover:text-white transition-all flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                Prodotti
+                Inserimento Prodotti
               </a>
               <a routerLink="/accounting" routerLinkActive="bg-white/20 text-white"
                 class="px-4 py-2 rounded-lg text-sm font-medium text-blue-100 hover:bg-white/10 hover:text-white transition-all flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                Contabilità
+                Pennino
               </a>
               <button (click)="logout()"
                 class="ml-3 px-3 py-2 rounded-lg text-sm font-medium text-blue-200 hover:bg-red-500/20 hover:text-red-200 transition-all flex items-center gap-1">
@@ -76,7 +76,7 @@ import { AuthService } from './auth/auth.service';
                   <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-700"></span>
                 }
               </div>
-              <span class="text-xs font-semibold mt-1" [class.font-bold]="rlaProducts.isActive">Prodotti</span>
+              <span class="text-xs font-semibold mt-1" [class.font-bold]="rlaProducts.isActive">Ins. Prodotti</span>
             </a>
             <a routerLink="/accounting" routerLinkActive #rlaAccounting="routerLinkActive"
               class="flex-1 flex flex-col items-center py-3 transition-colors"
@@ -90,7 +90,7 @@ import { AuthService } from './auth/auth.service';
                   <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-700"></span>
                 }
               </div>
-              <span class="text-xs font-semibold mt-1" [class.font-bold]="rlaAccounting.isActive">Contabilità</span>
+              <span class="text-xs font-semibold mt-1" [class.font-bold]="rlaAccounting.isActive">Pennino</span>
             </a>
           </div>
         </nav>

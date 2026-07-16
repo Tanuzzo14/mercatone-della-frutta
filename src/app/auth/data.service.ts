@@ -1,21 +1,29 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
+// Foglio: Inserimento Prodotti — colonne da media 15-7.xlsx
 export interface ProductRow {
   id: string;
   mese: string;
   articolo: string;
-  quantita: number;
-  prezzoKg: number;
+  quantita: number;   // QUANTI
+  prezzoKg: number;   // PREZ KG
+  iva: number;        // IVA (default 1.04)
+  divi: number;       // DIVI (divisore)
+  totCasse: number;   // tot casse
+  // totImpo calcolato: quantita * prezzoKg * iva / divi + totCasse
 }
 
+// Foglio: Pennino — colonne da "acq+ vendite revisio"
 export interface AccountingRow {
   id: string;
   mese: string;
-  data: string;
-  descrizione: string;
-  entrate: number;
-  uscite: number;
+  fattAcq: number;    // FATT ACQ
+  dataAcq: string;    // data acquisto
+  denom: string;      // denominazione acquisto
+  vendite: number;    // vendite
+  dataVend: string;   // data vendite
+  denomVend: string;  // denominazione vendite
 }
 
 @Injectable({ providedIn: 'root' })

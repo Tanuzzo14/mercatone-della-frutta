@@ -4,8 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { DataService, AccountingRow } from '../auth/data.service';
 import { ExcelService } from '../auth/excel.service';
 
-const IVA = 1.04;
-
 @Component({
   selector: 'app-accounting',
   standalone: true,
@@ -29,25 +27,23 @@ const IVA = 1.04;
       <!-- Summary cards -->
       <div class="grid grid-cols-3 gap-2 mb-5">
         <div class="card text-center p-3">
-          <p class="text-xs text-gray-500 mb-1 leading-tight">Entrate Lorde</p>
-          <p class="text-lg font-bold text-emerald-700">€{{ totalEntrateIva() }}</p>
+          <p class="text-xs text-gray-500 mb-1 leading-tight">Tot Acq+Giac</p>
+          <p class="text-lg font-bold text-red-600">€{{ totalAcq() }}</p>
         </div>
         <div class="card text-center p-3">
-          <p class="text-xs text-gray-500 mb-1 leading-tight">Uscite Lorde</p>
-          <p class="text-lg font-bold text-red-600">€{{ totalUsciteIva() }}</p>
+          <p class="text-xs text-gray-500 mb-1 leading-tight">Tot Vendite</p>
+          <p class="text-lg font-bold text-emerald-700">€{{ totalVend() }}</p>
         </div>
-        <div class="card text-center p-3" [class.bg-emerald-50]="saldo() >= 0" [class.bg-red-50]="saldo() < 0">
-          <p class="text-xs text-gray-500 mb-1 leading-tight">Saldo IVA</p>
-          <p class="text-lg font-bold" [class.text-emerald-700]="saldo() >= 0" [class.text-red-700]="saldo() < 0">
-            €{{ saldoFormatted() }}
+        <div class="card text-center p-3"
+          [class.bg-emerald-50]="acqMenoVend() >= 0"
+          [class.bg-red-50]="acqMenoVend() < 0">
+          <p class="text-xs text-gray-500 mb-1 leading-tight">Acq – Vend</p>
+          <p class="text-lg font-bold"
+            [class.text-emerald-700]="acqMenoVend() >= 0"
+            [class.text-red-700]="acqMenoVend() < 0">
+            €{{ acqMenoVendFormatted() }}
           </p>
         </div>
-      </div>
-
-      <!-- IVA badge -->
-      <div class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm">
-        <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-        <span class="text-amber-700"><strong>IVA fissa applicata: 1.04</strong> (4%) su tutte le voci</span>
       </div>
 
       <!-- Add row form -->
@@ -58,79 +54,81 @@ const IVA = 1.04;
         </h3>
 
         <div class="space-y-3">
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Data</label>
-            <input type="date" [(ngModel)]="newRow.data" class="input-field" />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Descrizione</label>
-            <input type="text" placeholder="Es. Fattura fornitore, Incasso giornaliero..." [(ngModel)]="newRow.descrizione"
-              class="input-field" autocomplete="off" />
-          </div>
+          <!-- ACQUISTI -->
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Acquisto</p>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Entrate (€)</label>
-              <input type="number" inputmode="decimal" placeholder="0.00" [(ngModel)]="newRow.entrate"
+              <label class="block text-xs font-medium text-gray-500 mb-1">FATT ACQ (€)</label>
+              <input type="number" inputmode="decimal" placeholder="0.00" [(ngModel)]="newRow.fattAcq"
                 min="0" step="0.01" class="input-field" />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Uscite (€)</label>
-              <input type="number" inputmode="decimal" placeholder="0.00" [(ngModel)]="newRow.uscite"
-                min="0" step="0.01" class="input-field" />
+              <label class="block text-xs font-medium text-gray-500 mb-1">Data Acquisto</label>
+              <input type="text" placeholder="Es. 01/07, 01/al13" [(ngModel)]="newRow.dataAcq"
+                class="input-field" autocomplete="off" />
             </div>
           </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Denominazione Acquisto</label>
+            <input type="text" placeholder="Es. DISEL, CT, lad fik" [(ngModel)]="newRow.denom"
+              class="input-field" autocomplete="off" />
+          </div>
 
-          <!-- Live preview -->
-          @if ((newRow.entrate > 0) || (newRow.uscite > 0)) {
-            <div class="bg-amber-50 rounded-xl p-3 grid grid-cols-2 gap-2 text-sm">
-              <div class="text-center">
-                <p class="text-xs text-gray-500">Entrate + IVA</p>
-                <p class="font-bold text-emerald-700">€{{ (newRow.entrate * IVA).toFixed(2) }}</p>
-              </div>
-              <div class="text-center">
-                <p class="text-xs text-gray-500">Uscite + IVA</p>
-                <p class="font-bold text-red-600">€{{ (newRow.uscite * IVA).toFixed(2) }}</p>
-              </div>
+          <!-- VENDITE -->
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wide mt-2">Vendita</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Vendite (€)</label>
+              <input type="number" inputmode="decimal" placeholder="0.00" [(ngModel)]="newRow.vendite"
+                min="0" step="0.01" class="input-field" />
             </div>
-          }
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Data Vendita</label>
+              <input type="text" placeholder="Es. 04/07, 01/al13" [(ngModel)]="newRow.dataVend"
+                class="input-field" autocomplete="off" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Denominazione Vendita</label>
+            <input type="text" placeholder="Es. ss+en, neg, nid,gut,arcoba" [(ngModel)]="newRow.denomVend"
+              class="input-field" autocomplete="off" />
+          </div>
 
-          <button (click)="addRow()" [disabled]="!newRow.descrizione" class="btn-primary disabled:opacity-50">
+          <button (click)="addRow()" [disabled]="!newRow.denom && !newRow.denomVend && !newRow.fattAcq && !newRow.vendite" class="btn-primary disabled:opacity-50">
             Aggiungi Registrazione
           </button>
         </div>
       </div>
 
-      <!-- Accounting table -->
+      <!-- Pennino table -->
       @if (filteredRows().length > 0) {
         <div class="card mb-5 overflow-hidden p-0">
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
                 <tr class="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white">
-                  <th class="p-3 text-left font-semibold">Data</th>
-                  <th class="p-3 text-left font-semibold">Descrizione</th>
-                  <th class="p-3 text-center font-semibold whitespace-nowrap text-emerald-200">Entrate</th>
-                  <th class="p-3 text-center font-semibold whitespace-nowrap text-red-200">Uscite</th>
-                  <th class="p-3 text-center font-semibold whitespace-nowrap">Lordo IVA</th>
+                  <th class="p-3 text-center font-semibold whitespace-nowrap text-red-200">FATT ACQ</th>
+                  <th class="p-3 text-left font-semibold whitespace-nowrap">data</th>
+                  <th class="p-3 text-left font-semibold whitespace-nowrap">denom</th>
+                  <th class="p-3 text-center font-semibold whitespace-nowrap text-emerald-200">vendite</th>
+                  <th class="p-3 text-left font-semibold whitespace-nowrap">data vend</th>
+                  <th class="p-3 text-left font-semibold whitespace-nowrap">deno vend</th>
                   <th class="p-3 text-center font-semibold w-10"></th>
                 </tr>
               </thead>
               <tbody>
                 @for (r of filteredRows(); track r.id; let odd = $odd) {
                   <tr [class]="odd ? 'bg-gray-50' : 'bg-white'" class="border-b border-gray-100 hover:bg-indigo-50 transition-colors">
-                    <td class="p-3 text-gray-500 text-xs whitespace-nowrap">{{ formatDate(r.data) }}</td>
-                    <td class="p-3 text-gray-800 font-medium">{{ r.descrizione }}</td>
-                    <td class="p-3 text-center text-emerald-700 font-semibold">
-                      {{ r.entrate > 0 ? '€' + r.entrate.toFixed(2) : '—' }}
-                    </td>
                     <td class="p-3 text-center text-red-600 font-semibold">
-                      {{ r.uscite > 0 ? '€' + r.uscite.toFixed(2) : '—' }}
+                      {{ r.fattAcq > 0 ? '€' + r.fattAcq.toFixed(2) : '—' }}
                     </td>
-                    <td class="p-3 text-center font-bold"
-                      [class.text-emerald-700]="(r.entrate - r.uscite) >= 0"
-                      [class.text-red-600]="(r.entrate - r.uscite) < 0">
-                      €{{ ((r.entrate - r.uscite) * IVA).toFixed(2) }}
+                    <td class="p-3 text-gray-500 text-xs whitespace-nowrap">{{ r.dataAcq || '—' }}</td>
+                    <td class="p-3 text-gray-800 font-medium">{{ r.denom || '—' }}</td>
+                    <td class="p-3 text-center text-emerald-700 font-semibold">
+                      {{ r.vendite > 0 ? '€' + r.vendite.toFixed(2) : '—' }}
                     </td>
+                    <td class="p-3 text-gray-500 text-xs whitespace-nowrap">{{ r.dataVend || '—' }}</td>
+                    <td class="p-3 text-gray-800">{{ r.denomVend || '—' }}</td>
                     <td class="p-3 text-center">
                       <button (click)="deleteRow(r.id)" class="text-red-400 hover:text-red-600 transition-colors p-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -141,11 +139,14 @@ const IVA = 1.04;
               </tbody>
               <tfoot>
                 <tr class="bg-gray-100 font-bold text-sm border-t-2 border-gray-200">
-                  <td class="p-3 text-gray-700" colspan="2">TOTALE MESE</td>
-                  <td class="p-3 text-center text-emerald-700">€{{ totalEntrateIva() }}</td>
-                  <td class="p-3 text-center text-red-600">€{{ totalUsciteIva() }}</td>
-                  <td class="p-3 text-center" [class.text-emerald-700]="saldo() >= 0" [class.text-red-600]="saldo() < 0">
-                    €{{ saldoFormatted() }}
+                  <td class="p-3 text-center text-red-600">€{{ totalAcq() }}</td>
+                  <td class="p-3 text-gray-700 text-xs" colspan="2">tot acq+giac</td>
+                  <td class="p-3 text-center text-emerald-700">€{{ totalVend() }}</td>
+                  <td class="p-3 text-gray-700 text-xs">tot vend</td>
+                  <td class="p-3 text-center font-bold"
+                    [class.text-emerald-700]="acqMenoVend() >= 0"
+                    [class.text-red-700]="acqMenoVend() < 0">
+                    acq-vend: €{{ acqMenoVendFormatted() }}
                   </td>
                   <td></td>
                 </tr>
@@ -172,17 +173,17 @@ export class AccountingComponent {
   private dataService = inject(DataService);
   private excelService = inject(ExcelService);
 
-  readonly IVA = IVA;
   selectedMonth = signal(new Date().toISOString().slice(0, 7));
-  newRow = { data: new Date().toISOString().slice(0, 10), descrizione: '', entrate: 0, uscite: 0 };
+  newRow = { fattAcq: 0, dataAcq: '', denom: '', vendite: 0, dataVend: '', denomVend: '' };
 
   filteredRows = computed(() => this.dataService.getAccounting(this.selectedMonth()));
-  totalEntrate = computed(() => this.filteredRows().reduce((s, r) => s + r.entrate, 0));
-  totalUscite = computed(() => this.filteredRows().reduce((s, r) => s + r.uscite, 0));
-  totalEntrateIva = computed(() => (this.totalEntrate() * IVA).toFixed(2));
-  totalUsciteIva = computed(() => (this.totalUscite() * IVA).toFixed(2));
-  saldo = computed(() => (this.totalEntrate() - this.totalUscite()) * IVA);
-  saldoFormatted = computed(() => this.saldo().toFixed(2));
+  totalAcq = computed(() => this.filteredRows().reduce((s, r) => s + r.fattAcq, 0).toFixed(2));
+  totalVend = computed(() => this.filteredRows().reduce((s, r) => s + r.vendite, 0).toFixed(2));
+  acqMenoVend = computed(() =>
+    this.filteredRows().reduce((s, r) => s + r.fattAcq, 0) -
+    this.filteredRows().reduce((s, r) => s + r.vendite, 0)
+  );
+  acqMenoVendFormatted = computed(() => this.acqMenoVend().toFixed(2));
 
   monthLabel = computed(() => {
     const [year, month] = this.selectedMonth().split('-');
@@ -190,15 +191,17 @@ export class AccountingComponent {
   });
 
   addRow(): void {
-    if (!this.newRow.descrizione) return;
+    if (!this.newRow.denom && !this.newRow.denomVend && !this.newRow.fattAcq && !this.newRow.vendite) return;
     this.dataService.addAccounting({
       mese: this.selectedMonth(),
-      data: this.newRow.data,
-      descrizione: this.newRow.descrizione.trim(),
-      entrate: this.newRow.entrate || 0,
-      uscite: this.newRow.uscite || 0,
+      fattAcq: this.newRow.fattAcq || 0,
+      dataAcq: this.newRow.dataAcq.trim(),
+      denom: this.newRow.denom.trim(),
+      vendite: this.newRow.vendite || 0,
+      dataVend: this.newRow.dataVend.trim(),
+      denomVend: this.newRow.denomVend.trim(),
     });
-    this.newRow = { data: new Date().toISOString().slice(0, 10), descrizione: '', entrate: 0, uscite: 0 };
+    this.newRow = { fattAcq: 0, dataAcq: '', denom: '', vendite: 0, dataVend: '', denomVend: '' };
   }
 
   deleteRow(id: string): void {
@@ -217,25 +220,25 @@ export class AccountingComponent {
     this.selectedMonth.set(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
 
-  formatDate(dateStr: string): string {
-    if (!dateStr) return '—';
-    try {
-      const [y, m, d] = dateStr.split('-');
-      return `${d}/${m}/${y}`;
-    } catch { return dateStr; }
-  }
-
   exportExcel(): void {
-    const data = this.filteredRows().map(r => ({
-      'Data': r.data,
-      'Descrizione': r.descrizione,
-      'Entrate Nette (€)': r.entrate,
-      'Uscite Nette (€)': r.uscite,
-      'IVA Applicata': IVA,
-      'Entrate Lorde IVA (€)': +(r.entrate * IVA).toFixed(2),
-      'Uscite Lorde IVA (€)': +(r.uscite * IVA).toFixed(2),
-      'Totale Lordo (€)': +((r.entrate - r.uscite) * IVA).toFixed(2),
+    const rows = this.filteredRows();
+    const data = rows.map(r => ({
+      'FATT ACQ': r.fattAcq,
+      'data': r.dataAcq,
+      'denom': r.denom,
+      'vendite': r.vendite,
+      'data vend': r.dataVend,
+      'deno vend': r.denomVend,
     }));
-    this.excelService.exportToExcel(data, `Contabilità_Pennino_${this.selectedMonth()}`);
+    // Append totals row
+    data.push({
+      'FATT ACQ': +this.totalAcq(),
+      'data': 'tot acq+giac',
+      'denom': '',
+      'vendite': +this.totalVend(),
+      'data vend': 'tot vend',
+      'deno vend': `acq-vend: ${this.acqMenoVendFormatted()}`,
+    });
+    this.excelService.exportToExcel(data, `Pennino_${this.selectedMonth()}`);
   }
 }
