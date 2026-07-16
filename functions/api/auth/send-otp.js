@@ -1,16 +1,3 @@
-/**
- * POST /api/auth/send-otp
- * Body: { businessId: string }
- *
- * Generates a 6-digit OTP, stores it in D1 with a 60-second expiry,
- * then sends the code via TextBelt to PHONE_NUMBER_1.
- *
- * Required environment variables (set in Cloudflare Pages dashboard):
- *   PHONE_NUMBER_1   – recipient phone number
- *   TEXTBELT_URL     – (optional) TextBelt endpoint (defaults to https://textbelt.com/text)
- *   TEXTBELT_KEY     – (optional) API key (defaults to the free "textbelt" key)
- */
-
 const VALID_BUSINESS_IDS = ['mercatone'];
 
 export async function onRequestPost({ request, env }) {
@@ -24,11 +11,12 @@ export async function onRequestPost({ request, env }) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const id = crypto.randomUUID();
     const now = Date.now();
-    const expiresAt = now + 60 * 1000; // 60 seconds
+    const expiresAt = now + 60 * 1000; // 60 secondi
 
-    // Remove old/expired OTPs for this business before inserting a new one
+    // FIX LOGICA: Rimosso il "OR" pericoloso. Prima cancellavi TUTTI gli OTP del business, 
+    // inclusi quelli ancora validi generati un secondo prima da altri utenti!
     await env.DB.prepare(
-      'DELETE FROM otp_codes WHERE business_id = ? OR expires_at < ?'
+      'DELETE FROM otp_codes WHERE (business_id = ? AND used = 1) OR expires_at < ?'
     )
       .bind(businessId, now)
       .run();
@@ -39,14 +27,22 @@ export async function onRequestPost({ request, env }) {
       .bind(id, businessId, otp, expiresAt)
       .run();
 
-    const message = `ecco il codice per entrare su mercatone della frutta: ${otp}`;
+    const message = `Ecco il codice per entrare su mercatone della frutta: ${otp}`;
     const textbeltUrl = env.TEXTBELT_URL || 'https://textbelt.com/text';
-    const phone = env.PHONE_NUMBER_1;
+    const phone = env.PHONE_NUMBER_1; // Assicurati che nel pannello Cloudflare sia "+393331234567"
     const key = env.TEXTBELT_KEY || 'textbelt';
 
     if (phone) {
-      const body = new URLSearchParams({ phone, message, key });
-      const response = await fetch(textbeltUrl, { method: 'POST', body });
+      // Usiamo JSON che è più pulito e gestisce il "+" nativamente senza sorprese
+      const response = await fetch(textbeltUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, message, key })
+      });
+
+      // CORRETTO: Cambiato PHONE_NUMBER_1 in phone per evitare il crash del Worker
+      console.warn(`[OTP] Inviato SMS a ${phone}. (OTP di test: ${otp})`);
+      
       const result = await response.json();
 
       if (!response.ok || !result.success) {
