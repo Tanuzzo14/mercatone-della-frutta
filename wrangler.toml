@@ -3,5 +3,5 @@ pages_build_output_dir = "dist/gestionale-pwa/browser"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "mercatone-db"
-database_id = "YOUR_D1_DATABASE_ID"
+database_name = "mercatone-della-frutta"
+database_id = "fcf01dbf-fb6c-4723-992c-00e25ca88274"
