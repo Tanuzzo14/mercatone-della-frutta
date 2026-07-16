@@ -1,0 +1,39 @@
+image: node:18-alpine
+
+stages:
+  - build
+  - deploy
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+
+build_app:
+  stage: build
+  script:
+    - npm ci
+    - npm run build -- --configuration production
+  artifacts:
+    paths:
+      - dist/gestionale-pwa/browser/
+    expire_in: 1 hour
+  only:
+    - main
+    - merge_requests
+
+deploy_cloudflare:
+  stage: deploy
+  image: node:18-alpine
+  dependencies:
+    - build_app
+  script:
+    - npm install -g wrangler
+    - wrangler pages deploy dist/gestionale-pwa/browser/
+        --project-name "$CLOUDFLARE_PROJECT_NAME"
+        --branch main
+  environment:
+    name: production
+    url: https://$CLOUDFLARE_PROJECT_NAME.pages.dev
+  only:
+    - main
