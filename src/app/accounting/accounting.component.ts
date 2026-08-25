@@ -46,7 +46,7 @@ import { ExcelService } from '../auth/excel.service';
         </div>
       </div>
 
-      <!-- Previous months Acq-Vend summary -->
+      <!-- Previous months Acq-Vend summary (above table) -->
       @if (previousMonthsSummary().length > 0) {
         <div class="card mb-5">
           <h3 class="font-bold text-gray-800 mb-3 text-sm">Riepilogo Acq – Vend Mesi Precedenti</h3>
@@ -136,6 +136,22 @@ import { ExcelService } from '../auth/excel.service';
                 </tr>
               </thead>
               <tbody>
+                <!-- Previous months Acq-Vend rows (inside table) -->
+                @for (monthSummary of previousMonthsSummary(); track monthSummary.month; let odd = $odd) {
+                  <tr [class]="odd ? 'bg-gray-50' : 'bg-white'" class="border-b border-gray-200 hover:bg-yellow-50 transition-colors">
+                    <td class="p-3 text-center font-semibold text-indigo-600 text-xs">Acq – Vend</td>
+                    <td class="p-3 text-left font-semibold text-indigo-600 text-xs">{{ monthSummary.label }}</td>
+                    <td class="p-3 text-gray-700 font-medium italic text-sm">Mese precedente</td>
+                    <td class="p-3 text-center font-bold text-sm"
+                      [class.text-emerald-700]="monthSummary.acqMenoVend >= 0"
+                      [class.text-red-700]="monthSummary.acqMenoVend < 0">
+                      €{{ monthSummary.acqMenoVendFormatted }}
+                    </td>
+                    <td colspan="2" class="p-3"></td>
+                    <td class="p-3 text-center"></td>
+                  </tr>
+                }
+                <!-- Current month rows -->
                 @for (r of filteredRows(); track r.id; let odd = $odd) {
                   <tr [class]="odd ? 'bg-gray-50' : 'bg-white'" class="border-b border-gray-100 hover:bg-indigo-50 transition-colors">
                     <td class="p-3 text-center text-red-600 font-semibold">
