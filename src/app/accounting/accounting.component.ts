@@ -12,14 +12,14 @@ import { ExcelService } from '../auth/excel.service';
     <div class="p-4 pb-4">
       <!-- Month navigation -->
       <div class="flex items-center gap-3 mb-5">
-        <button (click)="prevMonth()" class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-all">
+        <button (click)="prevMonth()" class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm hover:bg-gray-50 active:bg-gray-100 trans[...]
           <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         </button>
         <div class="flex-1">
           <input type="month" [ngModel]="selectedMonth()" (ngModelChange)="selectedMonth.set($event)"
             class="input-field text-center font-semibold text-gray-800" />
         </div>
-        <button (click)="nextMonth()" class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-all">
+        <button (click)="nextMonth()" class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm hover:bg-gray-50 active:bg-gray-100 trans[...]
           <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
       </div>
@@ -45,6 +45,25 @@ import { ExcelService } from '../auth/excel.service';
           </p>
         </div>
       </div>
+
+      <!-- Previous months Acq-Vend summary -->
+      @if (previousMonthsSummary().length > 0) {
+        <div class="card mb-5">
+          <h3 class="font-bold text-gray-800 mb-3 text-sm">Riepilogo Acq – Vend Mesi Precedenti</h3>
+          <div class="space-y-2">
+            @for (monthSummary of previousMonthsSummary(); track monthSummary.month) {
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                <span class="text-sm font-medium text-gray-700">{{ monthSummary.label }}</span>
+                <span class="text-sm font-bold"
+                  [class.text-emerald-700]="monthSummary.acqMenoVend >= 0"
+                  [class.text-red-700]="monthSummary.acqMenoVend < 0">
+                  €{{ monthSummary.acqMenoVendFormatted }}
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      }
 
       <!-- Add row form -->
       <div class="card mb-5">
@@ -131,7 +150,7 @@ import { ExcelService } from '../auth/excel.service';
                     <td class="p-3 text-gray-800">{{ r.denomVend || '—' }}</td>
                     <td class="p-3 text-center">
                       <button (click)="deleteRow(r.id)" class="text-red-400 hover:text-red-600 transition-colors p-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0[...]
                       </button>
                     </td>
                   </tr>
@@ -156,12 +175,12 @@ import { ExcelService } from '../auth/excel.service';
         </div>
 
         <button (click)="exportExcel()" class="btn-success flex items-center justify-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1[...]
           Esporta {{ monthLabel() }} in XLSX
         </button>
       } @else {
         <div class="card text-center py-12">
-          <svg class="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          <svg class="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 7h6m0[...]
           <p class="text-gray-500 font-medium">Nessuna registrazione per {{ monthLabel() }}</p>
           <p class="text-gray-400 text-sm mt-1">Inserisci la prima registrazione qui sopra</p>
         </div>
@@ -188,6 +207,34 @@ export class AccountingComponent {
   monthLabel = computed(() => {
     const [year, month] = this.selectedMonth().split('-');
     return new Date(+year, +month - 1).toLocaleString('it-IT', { month: 'long', year: 'numeric' });
+  });
+
+  previousMonthsSummary = computed(() => {
+    const [currentYear, currentMonth] = this.selectedMonth().split('-').map(Number);
+    const allAccounting = this.dataService.getAccountingMonths();
+    
+    const previousMonths = allAccounting.filter(month => {
+      const [year, monthNum] = month.split('-').map(Number);
+      // Confronto: year < currentYear oppure (year == currentYear e monthNum < currentMonth)
+      return year < currentYear || (year === currentYear && monthNum < currentMonth);
+    }).sort().reverse(); // Ordinamento decrescente (più recenti prima)
+
+    return previousMonths.map(month => {
+      const rows = this.dataService.getAccounting(month);
+      const acqTotal = rows.reduce((s, r) => s + r.fattAcq, 0);
+      const vendTotal = rows.reduce((s, r) => s + r.vendite, 0);
+      const acqMenoVend = acqTotal - vendTotal;
+      
+      const [year, monthNum] = month.split('-');
+      const label = new Date(+year, +monthNum - 1).toLocaleString('it-IT', { month: 'long' });
+      
+      return {
+        month,
+        label: label.charAt(0).toUpperCase() + label.slice(1),
+        acqMenoVend,
+        acqMenoVendFormatted: acqMenoVend.toFixed(2)
+      };
+    });
   });
 
   addRow(): void {
