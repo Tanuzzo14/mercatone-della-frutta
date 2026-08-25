@@ -284,16 +284,34 @@ export class AccountingComponent {
   }
 
   exportExcel(): void {
+    const data: any[] = [];
+
+    // Aggiungi righe mesi precedenti
+    this.previousMonthsSummary().forEach(monthSummary => {
+      data.push({
+        'FATT ACQ': 'Acq – Vend',
+        'data': monthSummary.label,
+        'denom': 'Mese precedente',
+        'vendite': +monthSummary.acqMenoVendFormatted,
+        'data vend': '',
+        'deno vend': '',
+      });
+    });
+
+    // Aggiungi righe mese corrente
     const rows = this.filteredRows();
-    const data = rows.map(r => ({
-      'FATT ACQ': r.fattAcq,
-      'data': r.dataAcq,
-      'denom': r.denom,
-      'vendite': r.vendite,
-      'data vend': r.dataVend,
-      'deno vend': r.denomVend,
-    }));
-    // Append totals row
+    rows.forEach(r => {
+      data.push({
+        'FATT ACQ': r.fattAcq,
+        'data': r.dataAcq,
+        'denom': r.denom,
+        'vendite': r.vendite,
+        'data vend': r.dataVend,
+        'deno vend': r.denomVend,
+      });
+    });
+
+    // Aggiungi riga totali
     data.push({
       'FATT ACQ': +this.totalAcq(),
       'data': 'tot acq+giac',
@@ -302,6 +320,7 @@ export class AccountingComponent {
       'data vend': 'tot vend',
       'deno vend': `acq-vend: ${this.acqMenoVendFormatted()}`,
     });
+
     this.excelService.exportToExcel(data, `Pennino_${this.selectedMonth()}`);
   }
 }
